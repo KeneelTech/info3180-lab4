@@ -23,30 +23,33 @@ def about():
     """Render the website's about page."""
     return render_template('about.html', name="Keneel Thomas")
 
+@app.route('/logout')
+@login_required  
+def logout():
+    logout_user()
+
+    flash('You have been logged out successfully.', 'success')
+
+    return redirect(url_for('home'))
+
 @app.route('/uploads/<filename>')
 def get_image(filename):
-    # Serve the requested file from the uploads folder
     return send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename)
 
 @app.route('/files')
-@login_required  # Ensure only logged-in users can access this route
+@login_required  
 def files():
-    # Get the list of uploaded images
+
     image_files = get_uploaded_images()
     
-    # Render the files template with the list of images
     return render_template('files.html', image_files=image_files)
 
 def get_uploaded_images():
-    # Get the path to the uploads folder
     upload_folder = app.config['UPLOAD_FOLDER']
     
-    # Initialize an empty list to store filenames
     image_files = []
     
-    # Iterate over the contents of the uploads folder
     for filename in os.listdir(upload_folder):
-        # Add the filename to the list if it's a file (not a directory)
         if os.path.isfile(os.path.join(upload_folder, filename)):
             image_files.append(filename)
     
@@ -56,23 +59,19 @@ def get_uploaded_images():
 @app.route('/upload', methods=['POST', 'GET'])
 @login_required
 def upload():
-    # Instantiate your form class
 
-    form = UploadForm()  # Instantiate the UploadForm
+    form = UploadForm()  
 
-    if form.validate_on_submit():  # Validate the form on submission
-        file = form.file.data  # Get the uploaded file
-        filename = secure_filename(file.filename)  # Secure the filename
+    if form.validate_on_submit():  
+        file = form.file.data  
+        filename = secure_filename(file.filename)  
 
-        # Save the file to the upload folder
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        # Flash a success message
         flash('File uploaded successfully!', 'success')
         return redirect(url_for('upload'))
 
-    # Render the upload template with the form
     return render_template('upload.html', form=form)
 
 
@@ -80,25 +79,18 @@ def upload():
 def login():
     form = LoginForm()
 
-     # Get the username and password values from the form
     username = form.username.data
     password = form.password.data
 
-    # Query the database for a user based on the username
     user = UserProfile.query.filter_by(username=username).first()
 
-    # Check if the user exists and the password is correct
     if user and check_password_hash(user.password, password): # type: ignore
-        # Log in the user
         login_user(user)
 
-        # Flash a success message
         flash('You have successfully logged in!', 'success')
 
-        # Redirect the user to the /upload route
         return redirect(url_for('upload'))
     else:
-        # Flash an error message if login fails
         flash('Invalid username or password. Please try again.', 'error')
     return render_template("login.html", form=form)
 
