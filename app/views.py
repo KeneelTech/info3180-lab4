@@ -1,6 +1,6 @@
 import os
 from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, send_from_directory
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
@@ -22,6 +22,35 @@ def home():
 def about():
     """Render the website's about page."""
     return render_template('about.html', name="Keneel Thomas")
+
+@app.route('/uploads/<filename>')
+def get_image(filename):
+    # Serve the requested file from the uploads folder
+    return send_from_directory(os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER']), filename)
+
+@app.route('/files')
+@login_required  # Ensure only logged-in users can access this route
+def files():
+    # Get the list of uploaded images
+    image_files = get_uploaded_images()
+    
+    # Render the files template with the list of images
+    return render_template('files.html', image_files=image_files)
+
+def get_uploaded_images():
+    # Get the path to the uploads folder
+    upload_folder = app.config['UPLOAD_FOLDER']
+    
+    # Initialize an empty list to store filenames
+    image_files = []
+    
+    # Iterate over the contents of the uploads folder
+    for filename in os.listdir(upload_folder):
+        # Add the filename to the list if it's a file (not a directory)
+        if os.path.isfile(os.path.join(upload_folder, filename)):
+            image_files.append(filename)
+    
+    return image_files
 
 
 @app.route('/upload', methods=['POST', 'GET'])

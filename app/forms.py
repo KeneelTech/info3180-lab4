@@ -15,3 +15,5 @@ class UploadForm(FlaskForm):
         FileRequired(),  # Ensure a file is uploaded
         FileAllowed(['jpg', 'png'], 'Only JPG and PNG images are allowed!')  # Restrict file types
     ])
+
+    
