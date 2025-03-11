@@ -5,7 +5,8 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
 from app.forms import LoginForm
-
+from .forms import LoginForm, UploadForm 
+from werkzeug.security import check_password_hash
 
 ###
 # Routing for your application.
@@ -20,21 +21,30 @@ def home():
 @app.route('/about/')
 def about():
     """Render the website's about page."""
-    return render_template('about.html', name="Mary Jane")
+    return render_template('about.html', name="Keneel Thomas")
 
 
 @app.route('/upload', methods=['POST', 'GET'])
+@login_required
 def upload():
     # Instantiate your form class
 
-    # Validate file upload on submit
-    if form.validate_on_submit():
-        # Get file data and save to your uploads folder
+    form = UploadForm()  # Instantiate the UploadForm
 
-        flash('File Saved', 'success')
-        return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
+    if form.validate_on_submit():  # Validate the form on submission
+        file = form.file.data  # Get the uploaded file
+        filename = secure_filename(file.filename)  # Secure the filename
 
-    return render_template('upload.html')
+        # Save the file to the upload folder
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        # Flash a success message
+        flash('File uploaded successfully!', 'success')
+        return redirect(url_for('upload'))
+
+    # Render the upload template with the form
+    return render_template('upload.html', form=form)
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -49,7 +59,7 @@ def login():
     user = UserProfile.query.filter_by(username=username).first()
 
     # Check if the user exists and the password is correct
-    if user and check_password_hash(user.password, password):
+    if user and check_password_hash(user.password, password): # type: ignore
         # Log in the user
         login_user(user)
 
